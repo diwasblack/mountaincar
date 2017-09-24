@@ -1,3 +1,7 @@
+#
+# Mountaincar problem using DQN and seperate target network
+#
+
 import gym
 import numpy as np
 import random
@@ -78,7 +82,6 @@ def main():
     trials = 1000
     trial_len = 500
 
-    # updateTargetNetwork = 1000
     dqn_agent = DQN(env=env)
     for trial in range(trials):
         cur_state = env.reset().reshape(1, 2)
@@ -89,9 +92,8 @@ def main():
             new_state = new_state.reshape(1, 2)
             dqn_agent.remember(cur_state, action, reward, new_state, done)
 
-            dqn_agent.replay(
-            )  # internally iterates default (prediction) model
-            dqn_agent.target_train()  # iterates target model
+            dqn_agent.replay()
+            dqn_agent.target_train()
 
             cur_state = new_state
             if done:
