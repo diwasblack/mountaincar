@@ -14,17 +14,27 @@ from collections import deque
 
 class DQN:
     def __init__(self, env):
+        # Environment to use
         self.env = env
+        # Replay memory
         self.memory = deque(maxlen=2000)
 
+        # Discount factor
         self.gamma = 0.85
-        self.epsilon = 1.0
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.learning_rate = 0.005
-        self.tau = .125
 
+        # Initial exploration factor
+        self.epsilon = 1.0
+        # Minimum value exploration factor
+        self.epsilon_min = 0.01
+        # Decay for epsilon
+        self.epsilon_decay = 0.995
+
+        # Learning rate
+        self.learning_rate = 0.005
+
+        # Model being trained
         self.model = self.create_model()
+        # Target model used to predict Q(S,A)
         self.target_model = self.create_model()
 
     def create_model(self):
@@ -39,8 +49,9 @@ class DQN:
         return model
 
     def act(self, state):
-        self.epsilon *= self.epsilon_decay
-        self.epsilon = max(self.epsilon_min, self.epsilon)
+        # Decay exploration rate by epsilon decay
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
         if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         return np.argmax(self.model.predict(state)[0])
@@ -65,12 +76,9 @@ class DQN:
             self.model.fit(state, target, epochs=1, verbose=0)
 
     def target_train(self):
-        weights = self.model.get_weights()
-        target_weights = self.target_model.get_weights()
-        for i in range(len(target_weights)):
-            target_weights[
-                i] = weights[i] * self.tau + target_weights[i] * (1 - self.tau)
-        self.target_model.set_weights(target_weights)
+        # Simply copy the weights of the model to target_model
+        self.target_model.set_weights(self.model.get_weights())
+        return
 
     def save_model(self, fn):
         self.model.save(fn)
@@ -93,7 +101,9 @@ def main():
             dqn_agent.remember(cur_state, action, reward, new_state, done)
 
             dqn_agent.replay()
-            dqn_agent.target_train()
+
+            if step % 10 == 0:
+                dqn_agent.target_train()
 
             cur_state = new_state
             if done:
