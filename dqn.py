@@ -17,7 +17,7 @@ class DQN:
         # Environment to use
         self.env = env
         # Replay memory
-        self.memory = deque(maxlen=2000)
+        self.memory = deque(maxlen=50000)
 
         # Discount factor
         self.gamma = 0.85
@@ -40,9 +40,8 @@ class DQN:
     def create_model(self):
         model = Sequential()
         state_shape = self.env.observation_space.shape
-        model.add(Dense(24, input_dim=state_shape[0], activation="relu"))
-        model.add(Dense(48, activation="relu"))
-        model.add(Dense(24, activation="relu"))
+        model.add(Dense(32, input_dim=state_shape[0], activation='relu'))
+        model.add(Dense(16, activation='relu'))
         model.add(Dense(self.env.action_space.n))
         model.compile(
             loss="mean_squared_error", optimizer=Adam(lr=self.learning_rate))
@@ -87,7 +86,7 @@ class DQN:
 def main():
     env = gym.make("MountainCar-v0")
 
-    trials = 1000
+    trials = 4000
     trial_len = 500
 
     dqn_agent = DQN(env=env)
