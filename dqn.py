@@ -40,9 +40,11 @@ class DQN:
     def create_model(self):
         model = Sequential()
         state_shape = self.env.observation_space.shape
-        model.add(Dense(32, input_dim=state_shape[0], activation='relu'))
-        model.add(Dense(16, activation='relu'))
-        model.add(Dense(self.env.action_space.n))
+        model.add(Dense(
+            32, input_dim=state_shape[0], activation='relu', kernel_initializer="he_uniform"))
+        model.add(Dense(16, activation='relu', kernel_initializer="he_uniform"))
+        model.add(Dense(self.env.action_space.n, activation="linear",
+                        kernel_initializer="he_uniform"))
         model.compile(
             loss="mean_squared_error", optimizer=Adam(lr=self.learning_rate))
         return model
