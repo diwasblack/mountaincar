@@ -17,10 +17,10 @@ class DQN:
         # Environment to use
         self.env = env
         # Replay memory
-        self.memory = deque(maxlen=50000)
+        self.memory = deque(maxlen=10000)
 
         # Discount factor
-        self.gamma = 0.85
+        self.gamma = 0.99
 
         # Initial exploration factor
         self.epsilon = 1.0
@@ -29,8 +29,13 @@ class DQN:
         # Decay for epsilon
         self.epsilon_decay = (self.epsilon - self.epsilon_min) / 50000
 
+        self.batch_size = 64
+        self.train_start = 1000
+        self.state_size = self.env.observation_space.shape[0]
+        self.action_size = self.env.action_space.n
+
         # Learning rate
-        self.learning_rate = 0.005
+        self.learning_rate = 0.001
 
         # Model being trained
         self.model = self.create_model()
@@ -39,9 +44,8 @@ class DQN:
 
     def create_model(self):
         model = Sequential()
-        state_shape = self.env.observation_space.shape
         model.add(Dense(
-            32, input_dim=state_shape[0], activation='relu', kernel_initializer="he_uniform"))
+            32, input_dim=self.state_size, activation='relu', kernel_initializer="he_uniform"))
         model.add(Dense(16, activation='relu', kernel_initializer="he_uniform"))
         model.add(Dense(self.env.action_space.n, activation="linear",
                         kernel_initializer="he_uniform"))
@@ -61,20 +65,28 @@ class DQN:
         self.memory.append([state, action, reward, new_state, done])
 
     def replay(self):
-        batch_size = 32
-        if len(self.memory) < batch_size:
+        if len(self.memory) < self.train_start:
             return
 
-        samples = random.sample(self.memory, batch_size)
-        for sample in samples:
-            state, action, reward, new_state, done = sample
-            target = self.target_model.predict(state)
+        mini_batch = random.sample(self.memory, self.batch_size)
+
+        update_input = np.zeros((self.batch_size, self.state_size))
+        update_target = np.zeros((self.batch_size, self.action_size))
+
+        for i in range(self.batch_size):
+            state, action, reward, next_state, done = mini_batch[i]
+            target = self.model.predict(state)[0]
+
             if done:
-                target[0][action] = reward
+                target[action] = reward
             else:
-                Q_future = max(self.target_model.predict(new_state)[0])
-                target[0][action] = reward + Q_future * self.gamma
-            self.model.fit(state, target, epochs=1, verbose=0)
+                target[action] = reward + self.gamma * \
+                    np.amax(self.target_model.predict(next_state)[0])
+            update_input[i] = state
+            update_target[i] = target
+
+        self.model.fit(update_input, update_target,
+                       batch_size=self.batch_size, epochs=1, verbose=0)
 
     def target_train(self):
         # Simply copy the weights of the model to target_model
@@ -110,7 +122,7 @@ def main():
             if done:
                 break
 
-        print("Iteration: {} Score: {}".format(trial, step))
+        print("Iteration: {} Score: -{}".format(trial, step))
 
 
 if __name__ == "__main__":
