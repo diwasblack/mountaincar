@@ -115,11 +115,10 @@ def main():
 
             dqn_agent.replay()
 
-            if step % 10 == 0:
-                dqn_agent.target_train()
-
             cur_state = new_state
             if done:
+                env.reset()
+                dqn_agent.target_train()
                 break
 
         print("Iteration: {} Score: -{}".format(trial, step))
