@@ -25,9 +25,9 @@ class DQN:
         # Initial exploration factor
         self.epsilon = 1.0
         # Minimum value exploration factor
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.005
         # Decay for epsilon
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = (self.epsilon - self.epsilon_min) / 50000
 
         # Learning rate
         self.learning_rate = 0.005
@@ -50,7 +50,7 @@ class DQN:
     def act(self, state):
         # Decay exploration rate by epsilon decay
         if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+            self.epsilon -= self.epsilon_decay
         if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         return np.argmax(self.model.predict(state)[0])
